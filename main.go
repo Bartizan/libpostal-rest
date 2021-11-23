@@ -16,7 +16,9 @@ import (
 )
 
 type Request struct {
-	Query string `json:"query"`
+	Query    string `json:"query"`
+	Language string `json:"language"`
+	Country  string `json:"country"`
 }
 
 func main() {
@@ -37,6 +39,7 @@ func main() {
 	router.HandleFunc("/health", HealthHandler).Methods("GET")
 	router.HandleFunc("/expand", ExpandHandler).Methods("POST")
 	router.HandleFunc("/parser", ParserHandler).Methods("POST")
+	router.HandleFunc("/parserOpt", ParserOptHandler).Methods("POST")
 
 	s := &http.Server{Addr: listenSpec, Handler: router}
 	go func() {
@@ -86,7 +89,28 @@ func ParserHandler(w http.ResponseWriter, r *http.Request) {
 	q, _ := ioutil.ReadAll(r.Body)
 	json.Unmarshal(q, &req)
 
+	// parsed := parser.ParseAddressOptions(req.Query, parser.ParserOptions{
+	// 	Language: req.Language,
+	// 	Country:  req.Country,
+	// })
 	parsed := parser.ParseAddress(req.Query)
+	parseThing, _ := json.Marshal(parsed)
+	w.Write(parseThing)
+}
+
+func ParserOptHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var req Request
+
+	q, _ := ioutil.ReadAll(r.Body)
+	json.Unmarshal(q, &req)
+
+	parsed := parser.ParseAddressOptions(req.Query, parser.ParserOptions{
+		Language: req.Language,
+		Country:  req.Country,
+	})
+	//	parsed := parser.ParseAddress(req.Query)
 	parseThing, _ := json.Marshal(parsed)
 	w.Write(parseThing)
 }
